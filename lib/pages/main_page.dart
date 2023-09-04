@@ -4,18 +4,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:phirapply/pages/schemes_page.dart';
-import 'applied_schemes_page.dart';
+import 'applied_schemes_page.dart'; // Import the correct file
 import 'grievance_page.dart';
 import 'help_page.dart';
 
 class MainPage extends StatefulWidget {
   @override
   State<MainPage> createState() => _MainPageState();
+
 }
 
 class _MainPageState extends State<MainPage> {
+
   final User? user = FirebaseAuth.instance.currentUser;
-  Map<String, dynamic>? userData;
+  Map<String, dynamic>? users;
   // Store user data
   final List<String> images = [
     'assets/images/image1.jpg',
@@ -71,7 +73,7 @@ class _MainPageState extends State<MainPage> {
 
     if (docSnapshot.exists) {
       setState(() {
-        userData = docSnapshot.data() as Map<String, dynamic>;
+        users= docSnapshot.data() as Map<String, dynamic>;
       });
     }
   }
@@ -89,7 +91,7 @@ class _MainPageState extends State<MainPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SchemePage(),
+          builder: (context) => SchemePage(), // Corrected the class name
         ),
       );
     } else if (pageTitle == 'Applied Schemes') {
@@ -162,31 +164,25 @@ class _MainPageState extends State<MainPage> {
       ),
       drawer: Drawer(
         child: Container(
-          color: Colors.indigo,
+          color: Colors.indigo, // Set the background color of the drawer
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Colors.indigo,
-                ),
+              Container(
+                color: Colors.indigo,
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircleAvatar(
-                      backgroundImage: AssetImage('assets/user_avatar.jpg'),
-                      radius: 30,
-                    ),
-                    SizedBox(height: 10),
                     Text(
-                      userData?['Full Name'] ?? 'Name not available',
+                      users?['Full Name'] ?? 'Name not available',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    SizedBox(height: 10),
                     Text(
                       user!.email ?? 'Email not available',
                       style: TextStyle(
@@ -194,22 +190,25 @@ class _MainPageState extends State<MainPage> {
                         fontSize: 14,
                       ),
                     ),
+                    SizedBox(height: 10),
                     Text(
-                      userData?['Phone Number'] ?? 'Phone Number not available',
+                      users?['Phone Number'] ?? 'Phone Number not available',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                       ),
                     ),
+                    SizedBox(height: 10),
                     Text(
-                      userData?['Address'] ?? 'Address not available',
+                      users?['Address'] ?? 'Address not available',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                       ),
                     ),
+                    SizedBox(height: 10),
                     Text(
-                      userData?['Pincode'] ?? 'Pincode not available',
+                      users?['Pincode'] ?? 'Pincode not available',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -218,7 +217,15 @@ class _MainPageState extends State<MainPage> {
                   ],
                 ),
               ),
+              Divider(
+                color: Colors.white,
+                thickness: 1,
+                height: 1,
+                indent: 16,
+                endIndent: 16,
+              ),
               ListTile(
+                tileColor: Colors.indigo,
                 title: Text(
                   'Schemes',
                   style: TextStyle(
@@ -232,6 +239,7 @@ class _MainPageState extends State<MainPage> {
                 },
               ),
               ListTile(
+                tileColor: Colors.indigo,
                 title: Text(
                   'Applied Schemes',
                   style: TextStyle(
@@ -245,6 +253,7 @@ class _MainPageState extends State<MainPage> {
                 },
               ),
               ListTile(
+                tileColor: Colors.indigo,
                 title: Text(
                   'Grievance',
                   style: TextStyle(
@@ -258,6 +267,7 @@ class _MainPageState extends State<MainPage> {
                 },
               ),
               ListTile(
+                tileColor: Colors.indigo,
                 title: Text(
                   'Need Help',
                   style: TextStyle(
@@ -289,14 +299,13 @@ class _MainPageState extends State<MainPage> {
                   ),
                   onTap: () {
                     FirebaseAuth.instance.signOut();
-
                   },
                   leading: Icon(
                     Icons.power_settings_new,
                     color: Colors.white,
                   ),
-                  contentPadding:
-                  EdgeInsets.symmetric(horizontal: 16), // Add horizontal padding
+                  contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16), // Add horizontal padding
                 ),
               ),
             ],

@@ -96,7 +96,7 @@ class _RegisterPageState extends State<RegisterPage> {
             _buildFormField(_nameController, 'Full Name', Icons.person, Colors.red),
             _buildFormField(_phoneNumberController, 'Phone Number', Icons.phone, Colors.blue),
             _buildFormField(_addressController, 'Address', Icons.home, Colors.green),
-            _buildFormField(_pincodeController, 'Pincode', Icons.email, Colors.orange),
+            _buildFormField(_pincodeController, 'Pincode', Icons.signpost_sharp, Colors.orange),
             _buildFormField(_emailController, 'Email', Icons.email, Colors.purple),
             _buildFormField(_passwordController, 'Password', Icons.lock, Colors.teal, isObscureText: true),
             _buildFormField(_confirmPasswordController, 'Confirm Password', Icons.lock, Colors.brown, isObscureText: true),
