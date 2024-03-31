@@ -16,26 +16,44 @@ class _LoginAppState extends State<LoginApp> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   FlutterTts flutterTts = FlutterTts();
+  bool _isObscure = true; // Whether the password is obscured or not
+  bool _isSpeaking = false;
 
-  Future<void> _speakWithPitch(String text, double pitch) async {
-    await flutterTts.setPitch(pitch);
+  Future<void> _speakMarathi(String text) async {
+    await flutterTts.setLanguage("mar"); // Set the language to Marathi
+
+    // Adjust pitch and speed values as needed
+    await flutterTts.setPitch(1.1); // Experiment with different pitch values
+    await flutterTts.setSpeechRate(0.55); // Experiment with different speed values
+
     await flutterTts.speak(text);
+
+    setState(() {
+      _isSpeaking = true;
+    });
+
+    await flutterTts.awaitSpeakCompletion(true);
+
+    setState(() {
+      _isSpeaking = false;
+    });
   }
 
   Future<void> _submitForm() async {
-    await FirebaseAuth.instance
-        .signInWithEmailAndPassword(
+    try {
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
-        password: _passwordController.text.trim())
-        .then((userCredential) {
+        password: _passwordController.text.trim(),
+      );
+
       // User is logged in successfully, you can navigate to another screen.
       print('Logged in as: ${userCredential.user?.email}');
-      _speakWithPitch('Logged in ', 1.0);
-    }).catchError((e) {
+      _speakMarathi('लॉग इन झालं'); // Speak in Marathi
+    } catch (e) {
       // Handle login errors, e.g., display an error message.
       print('Login error: $e');
-      _speakWithPitch('Login error: $e', 1.0);
-    });
+      _speakMarathi('लॉग इन करण्यात त्रुटी आली: $e'); // Speak the error message in Marathi
+    }
   }
 
   @override
@@ -47,17 +65,17 @@ class _LoginAppState extends State<LoginApp> {
           Container(
             height: 350,
             decoration: BoxDecoration(
-              color: Colors.orange, // Background color of the header
-              borderRadius: BorderRadius.circular(20.0), // Rounded corners
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(20.0),
             ),
             child: Center(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20.0), // Rounded corners
+                borderRadius: BorderRadius.circular(20.0),
                 child: Image.asset(
-                  'assets/images/login_page.jpg', // Replace with your image path
+                  'assets/images/login_page.jpg',
                   width: 400,
-                  height: 350, // Adjust the height to fit within the container
-                  fit: BoxFit.cover, // Make sure the image covers the entire container
+                  height: 350,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
@@ -70,14 +88,16 @@ class _LoginAppState extends State<LoginApp> {
                 TextFormField(
                   controller: _emailController,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'ईमेल',
                     icon: Icon(Icons.email),
-                    fillColor: Colors.white, // Background color of input fields
+                    fillColor: Colors.white,
                     filled: true,
                     suffixIcon: IconButton(
-                      icon: Icon(Icons.volume_up),
+                      icon: Icon(_isSpeaking ? Icons.volume_off : Icons.volume_up),
                       onPressed: () {
-                        _speakWithPitch('Please enter email', 1.0);
+                        if (!_isSpeaking) {
+                          _speakMarathi('कृपया ईमेल प्रविष्ट करा');
+                        }
                       },
                     ),
                   ),
@@ -86,18 +106,34 @@ class _LoginAppState extends State<LoginApp> {
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: 'पासवर्ड',
                     icon: Icon(Icons.lock),
-                    fillColor: Colors.white, // Background color of input fields
+                    fillColor: Colors.white,
                     filled: true,
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.volume_up),
-                      onPressed: () {
-                        _speakWithPitch('Please enter password', 1.0);
-                      },
+                    suffixIcon: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(_isObscure ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () {
+                            setState(() {
+                              _isObscure = !_isObscure;
+                            });
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(_isSpeaking ? Icons.volume_off : Icons.volume_up),
+                          onPressed: () {
+                            if (!_isSpeaking) {
+                              _speakMarathi('कृपया पासवर्ड प्रविष्ट करा');
+                            }
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                  obscureText: true,
+                  obscureText: _isObscure,
                 ),
                 SizedBox(height: 20),
                 Row(
@@ -109,10 +145,9 @@ class _LoginAppState extends State<LoginApp> {
                             MaterialPageRoute(builder: (context) {
                               return ForgotPasswordPage();
                             }));
-                        // Removed TTS here to prevent speaking on tap.
                       },
                       child: Text(
-                        'Forget Password ? ',
+                        'पासवर्ड विसरलात का?',
                         style: TextStyle(
                           color: Colors.blue,
                           decoration: TextDecoration.underline,
@@ -127,18 +162,22 @@ class _LoginAppState extends State<LoginApp> {
                     _submitForm();
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.blue, // Background color of the button
+                    primary: Colors.blue,
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 13),
                   ),
-                  child: Text('Login'),
+                  child: Text(
+                    'लॉग इन करा',
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
                 SizedBox(height: 10),
-                Center( // Center the text
+                Center(
                   child: GestureDetector(
                     onTap: () {
                       widget.showRegisterPage();
                     },
                     child: Text(
-                      "Not a user yet? Sign up now",
+                      "अद्याप वापरकर्ता नाही? आता साइन अप करा",
                       style: TextStyle(
                         color: Colors.blue,
                         decoration: TextDecoration.underline,

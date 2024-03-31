@@ -51,7 +51,7 @@ class _HelpPageState extends State<HelpPage> {
                   '011 24369054',
                 ]),
                 SizedBox(height: 32.0),
-                _buildInfoRow(Icons.phone_in_talk, 'ALIMCO Toll-Free Number', [
+                _buildInfoRow(Icons.phone_in_talk, 'Toll-Free Number', [
                   '18001805129',
                 ]),
                 SizedBox(height: 32.0), // Add more space if needed

@@ -4,21 +4,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:phirapply/pages/schemes_page.dart';
-import 'applied_schemes_page.dart'; // Import the correct file
+import 'applied_schemes_page.dart';
 import 'grievance_page.dart';
 import 'help_page.dart';
 
 class MainPage extends StatefulWidget {
   @override
   State<MainPage> createState() => _MainPageState();
-
 }
 
 class _MainPageState extends State<MainPage> {
-
   final User? user = FirebaseAuth.instance.currentUser;
   Map<String, dynamic>? users;
-  // Store user data
+
   final List<String> images = [
     'assets/images/image1.jpg',
     'assets/images/image2.jpg',
@@ -34,7 +32,6 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     startTimer();
-    // Fetch user data when the widget is initialized
     _fetchUserData();
   }
 
@@ -73,7 +70,7 @@ class _MainPageState extends State<MainPage> {
 
     if (docSnapshot.exists) {
       setState(() {
-        users= docSnapshot.data() as Map<String, dynamic>;
+        users = docSnapshot.data() as Map<String, dynamic>;
       });
     }
   }
@@ -84,14 +81,14 @@ class _MainPageState extends State<MainPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => GrievancePage(),
+          builder: (context) => GrievancePage(userId: user!.uid,),
         ),
       );
     } else if (pageTitle == 'Schemes Page') {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SchemePage(), // Corrected the class name
+          builder: (context) => SchemePage(),
         ),
       );
     } else if (pageTitle == 'Applied Schemes') {
@@ -109,7 +106,6 @@ class _MainPageState extends State<MainPage> {
         ),
       );
     }
-    // Add more navigation conditions for other pages here
   }
 
   Widget _buildOptionCard({
@@ -160,17 +156,20 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Main Page'),
+        title: Text(
+          'Welcome ${users?['Full Name'] ?? 'Guest'} ',
+          style: TextStyle(fontSize: 20),
+        ),
       ),
       drawer: Drawer(
         child: Container(
-          color: Colors.indigo, // Set the background color of the drawer
+          color: Colors.indigo,
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
               Container(
                 color: Colors.indigo,
-                padding: EdgeInsets.all(16.0),
+                padding: EdgeInsets.fromLTRB(16.0, 32.0, 16.0, 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -183,36 +182,80 @@ class _MainPageState extends State<MainPage> {
                       ),
                     ),
                     SizedBox(height: 10),
-                    Text(
-                      user!.email ?? 'Email not available',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Email: ',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          user!.email ?? 'Email not available',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 10),
-                    Text(
-                      users?['Phone Number'] ?? 'Phone Number not available',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Phone Number: ',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          users?['Phone Number'] ?? 'Phone Number not available',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 10),
-                    Text(
-                      users?['Address'] ?? 'Address not available',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Address: ',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          users?['Address'] ?? 'Address not available',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 10),
-                    Text(
-                      users?['Pincode'] ?? 'Pincode not available',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Pincode: ',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          users?['Pincode'] ?? 'Pincode not available',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -305,7 +348,8 @@ class _MainPageState extends State<MainPage> {
                     color: Colors.white,
                   ),
                   contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16), // Add horizontal padding
+                    horizontal: 16,
+                  ),
                 ),
               ),
             ],
@@ -333,35 +377,27 @@ class _MainPageState extends State<MainPage> {
               },
             ),
           ),
-          SizedBox(height: 16.0),
+          SizedBox(height: 20.0), // Increased the SizedBox height
           _buildOptionCard(
             icon: Icons.assignment,
             iconColor: Colors.green,
             title: 'Schemes',
             pageTitle: 'Schemes Page',
           ),
-          SizedBox(height: 16.0),
+          SizedBox(height: 20.0), // Increased the SizedBox height
           _buildOptionCard(
             icon: Icons.event_available_outlined,
             iconColor: Colors.blueGrey,
             title: 'Applied Schemes',
             pageTitle: 'Applied Schemes',
           ),
-          SizedBox(height: 24.0),
-          _buildOptionCard(
-            icon: Icons.message_outlined,
-            iconColor: Colors.purple,
-            title: 'Grievance',
-            pageTitle: 'Grievance Page',
-          ),
-          SizedBox(height: 16.0),
+          SizedBox(height: 20.0), // Increased the SizedBox height
           _buildOptionCard(
             icon: Icons.help,
             iconColor: Colors.brown,
             title: 'Need Help',
             pageTitle: 'Need Help',
           ),
-          // Add more option cards here
         ],
       ),
     );

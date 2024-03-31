@@ -1,67 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GrievancePage extends StatefulWidget {
+  final String userId; // Unique user ID
+
+  GrievancePage({required this.userId});
+
   @override
   _GrievancePageState createState() => _GrievancePageState();
 }
 
 class _GrievancePageState extends State<GrievancePage> {
-  TextEditingController _subjectController = TextEditingController();
-  TextEditingController _descriptionController = TextEditingController();
-  bool _isButtonAnimating = false;
+  TextEditingController _messageController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? user;
+  String? userName; // Store user's name
+  String? userEmail; // Store user's email
 
   @override
-  void dispose() {
-    _subjectController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    user = _auth.currentUser;
+    if (user != null) {
+      userEmail = user!.email; // Store user's email
+      // Retrieve user's name from Firestore
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId) // Use the unique user ID
+          .get()
+          .then((docSnapshot) {
+        if (docSnapshot.exists) {
+          final userData = docSnapshot.data() as Map<String, dynamic>;
+          setState(() {
+            userName = userData['Full Name'] ?? '';
+          });
+        }
+      });
+    }
+
+    // Create chat room collection for the user
+    _createChatRoomCollection();
   }
 
-  Future<void> _submitGrievance(BuildContext context) async {
-    String subject = _subjectController.text;
-    String description = _descriptionController.text;
+  Future<void> _createChatRoomCollection() async {
+    await FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(widget.userId)
+        .set({'messages': []});
+  }
 
-    if (subject.isNotEmpty && description.isNotEmpty) {
-      setState(() {
-        _isButtonAnimating = true;
+  Future<void> _sendMessage() async {
+    String message = _messageController.text;
+    if (message.isNotEmpty) {
+      final userDocRef =
+      FirebaseFirestore.instance.collection('chat_rooms').doc(widget.userId);
+
+      // Get the current messages array
+      DocumentSnapshot docSnapshot = await userDocRef.get();
+      List<Map<String, dynamic>> messages =
+      List<Map<String, dynamic>>.from(docSnapshot.get('messages'));
+
+      // Add a new message to the array
+      messages.add({
+        'senderId': user!.uid,
+        'senderName': userName, // Add user name
+        'senderEmail': userEmail, // Add user email
+        'message': message,
+        'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // Simulate processing for 2 seconds
-      await Future.delayed(Duration(seconds: 2));
+      // Update the messages array in Firestore
+      await userDocRef.update({'messages': messages});
 
-      // Show a SnackBar indicating successful submission
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Grievance submitted successfully!'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-
-      setState(() {
-        _isButtonAnimating = false;
-      });
-
-      // Navigate back to previous screen
-      Navigator.pop(context);
-    } else {
-      // Show an error message if subject or description is empty
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Error'),
-            content: Text('Please fill in both subject and description.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
+      // Clear the message input field
+      _messageController.clear();
     }
   }
 
@@ -71,68 +84,68 @@ class _GrievancePageState extends State<GrievancePage> {
       appBar: AppBar(
         title: Text('Grievance Page'),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Please submit your grievance here',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _subjectController,
-                decoration: InputDecoration(
-                  labelText: 'Grievance Subject',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _descriptionController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  labelText: 'Grievance Description',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              SizedBox(height: 25),
-              Builder( // Wrap the ElevatedButton with Builder widget
-                builder: (context) {
-                  return ElevatedButton(
-                    onPressed: _isButtonAnimating ? null : () => _submitGrievance(context),
-                    child: _isButtonAnimating
-                        ? CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    )
-                        : Text(
-                      '        Submit        ',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.indigo,
-                      padding: EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(35),
-                      ),
-                      elevation: 5,
-                    ),
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('chat_rooms')
+                  .doc(widget.userId) // Use the unique user ID
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return Center(
+                    child: Text('No messages yet.'),
                   );
-                },
-              ),
-            ],
+                }
+
+                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                final messages = userData['messages'] ?? [];
+
+                return ListView.builder(
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    Map<String, dynamic> messageData = messages[index];
+                    return ListTile(
+                      title: Text(messageData['message']),
+                      subtitle: Text(
+                        'Sent by: ${messageData['senderName']} (${messageData['senderEmail']})',
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
-        ),
+          Divider(),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          labelText: 'Type a message',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: _sendMessage,
+                      child: Text('Send Message'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-
-

@@ -23,8 +23,35 @@ class _RegisterPageState extends State<RegisterPage> {
 
   FlutterTts flutterTts = FlutterTts();
 
+  Future<void> setPitch() async {
+    await flutterTts.setPitch(1.0);
+  }
+
   Future<void> speakOptionName(String optionName) async {
+    await setPitch();
     await flutterTts.speak(optionName);
+  }
+
+  Future<void> speakPageOverview() async {
+    await setPitch();
+
+    try {
+      await flutterTts.speak('नोंदणी पृष्ठाची आपली माहिती');
+      await Future.delayed(Duration(seconds: 3));
+      await flutterTts.speak('पूर्ण नाव, फोन नंबर, पत्ता, पिनकोड, ईमेल, आणि पासवर्ड भरा');
+      await Future.delayed(Duration(seconds: 6));
+      await flutterTts.speak('सर्व माहिती असल्यास "साइन अप करा" साठी बटणावर क्लिक करा');
+      await Future.delayed(Duration(seconds: 5));
+      await flutterTts.speak('सुधारित वाचा');
+      await Future.delayed(Duration(seconds: 2));
+      await flutterTts.speak('आपल्याला आधारित नियमानुसार इ.मेल आणि पासवर्ड तयार करा');
+      await Future.delayed(Duration(seconds: 5));
+      await flutterTts.speak('पासवर्ड विसरलात का? "सुधा वापरकर्ता आहात? लॉग इन करा" लिंकवर क्लिक करा');
+      await Future.delayed(Duration(seconds: 7));
+      await flutterTts.speak('सुधा सर्व माहितीसाठी "सर्व माहिती" बटणावर क्लिक करा');
+    } catch (e) {
+      print('TTS Error in speakPageOverview: $e');
+    }
   }
 
   Future<void> signUp() async {
@@ -39,7 +66,6 @@ class _RegisterPageState extends State<RegisterPage> {
           password: password,
         );
 
-        // User registration was successful, add user details to Firestore.
         await addUserDetails(
           _nameController.text.trim(),
           _phoneNumberController.text.trim(),
@@ -48,32 +74,35 @@ class _RegisterPageState extends State<RegisterPage> {
           _emailController.text.trim(),
         );
 
-        // Access user information from authResult.user
         print('User registration successful: ${authResult.user?.email}');
+        speakOptionName('नोंदणी सफळ');
 
         // Navigate to the next screen or perform other actions on successful registration.
       } catch (e) {
-        // Handle any errors that occur during registration.
         print('Error during registration: $e');
-        // You can display an error message to the user here.
-        speakOptionName("Error during registration. Please try again.");
+        speakOptionName('नोंदणीत त्रुटी. कृपया पुन्हा प्रयत्न करा.');
       }
     } else {
-      // Passwords do not match, you can display an error message.
       print('Passwords do not match');
-      // You can display an error message to the user here.
-      speakOptionName("Passwords do not match. Please make sure they match.");
+      speakOptionName('पासवर्ड सापडत नाहीत. कृपया खात्री करा की ते मेलावले आहे की नाही.');
     }
   }
 
   Future<void> addUserDetails(String fullName, String phoneNumber, String address, String pincode, String email) async {
-    await FirebaseFirestore.instance.collection('users').add({
-      'Full Name': fullName,
-      'Phone Number': phoneNumber,
-      'Address': address,
-      'Pincode': pincode,
-      'Email': email,
-    });
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      final docReference = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      await docReference.set({
+        'Full Name': fullName,
+        'Phone Number': phoneNumber,
+        'Address': address,
+        'Pincode': pincode,
+        'Email': email,
+        'Role': 'User',
+      });
+    }
   }
 
   @override
@@ -81,8 +110,8 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Registration',
-          style: TextStyle(color: Colors.white), // Customize text color
+          'नोंदणी',
+          style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: Colors.blue,
@@ -103,11 +132,11 @@ class _RegisterPageState extends State<RegisterPage> {
             SizedBox(height: 20),
             _buildSignUpButton(),
             SizedBox(height: 10),
-            Center( // Center the "Log in now" link
+            Center(
               child: GestureDetector(
                 onTap: widget.showLoginApp,
                 child: Text(
-                  "Already a user? Log in now",
+                  "Already have an account? Log in here",
                   style: TextStyle(
                     color: Colors.blue,
                     decoration: TextDecoration.underline,
@@ -115,6 +144,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
             ),
+            SizedBox(height: 10),
+            _buildAllInformationButton(),
           ],
         ),
       ),
@@ -122,15 +153,28 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildFormField(TextEditingController controller, String labelText, IconData icon, Color iconColor, {bool isObscureText = false}) {
+    // Mapping of English field names to Marathi field names
+    Map<String, String> fieldTranslations = {
+      'Full Name': 'पूर्ण नाव',
+      'Phone Number': 'फोन नंबर',
+      'Address': 'पत्ता',
+      'Pincode': 'पिनकोड',
+      'Email': 'ईमेल',
+      'Password': 'पासवर्ड',
+      'Confirm Password': 'पासवर्ड पुनरावलोकन',
+    };
+
+    String marathiLabelText = fieldTranslations[labelText] ?? labelText;
+
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
-        labelText: labelText,
-        icon: Icon(icon, color: iconColor), // Customize icon color
+        labelText: marathiLabelText,
+        icon: Icon(icon, color: iconColor),
         suffixIcon: IconButton(
           icon: Icon(Icons.volume_up),
           onPressed: () {
-            speakOptionName(labelText);
+            speakOptionName("कृपया $marathiLabelText प्रविष्ट करा");
           },
         ),
       ),
@@ -141,9 +185,23 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildSignUpButton() {
     return ElevatedButton(
       onPressed: signUp,
-      child: Text('Sign Up'),
+      child: Text('साइन अप करा'),
       style: ElevatedButton.styleFrom(
-        primary: Colors.blue,
+        backgroundColor: Colors.blue,
+        padding: EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAllInformationButton() {
+    return ElevatedButton(
+      onPressed: speakPageOverview,
+      child: Text('सर्व माहिती'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.green,
         padding: EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
@@ -154,15 +212,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _nameController.dispose();
-    _addressController.dispose();
-    _pincodeController.dispose();
-    _phoneNumberController.dispose();
-    flutterTts.stop();
-
+    Future.delayed(Duration(milliseconds: 500), () {
+      flutterTts.stop();
+    });
     super.dispose();
   }
 }
